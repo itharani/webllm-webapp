@@ -1,75 +1,180 @@
-/* General Styles */
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f9;
-    margin: 0;
-    padding: 20px;
-    color: #333;
-  }
-  
-  h1 {
-    text-align: center;
-    color: #444;
-  }
-  
-  .chat-container {
-    max-width: 600px;
-    margin: 20px auto;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-  }
-  
-  textarea {
-    width: 100%;
-    height: 100px;
-    resize: none;
-    font-size: 16px;
+/* General styling */
+body,
+html {
+  font-family: 'Arial', sans-serif;
+  padding: 20px;
+  margin: 0;
+  background-color: #f8f8f8; /* Light background for a clean look */
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+h1 {
+  text-align: center;
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+}
+
+/* Download Container */
+.download-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+#download-status {
+  border: solid 1px #007bff;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 10px;
+  background-color: #f5f9fc;
+  color: #007bff;
+  font-size: 1rem;
+  border-radius: 8px;
+}
+
+/* Chat Container */
+.chat-container {
+  height: 400px;
+  max-width: 100%;
+  border: 2px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.chat-box {
+  flex: 1;
+  overflow-y: auto;
+  background-color: #e9f3f3;
+  padding: 10px;
+  font-size: 1rem;
+  border-bottom: 1px solid #ccc;
+  border-top: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.chat-stats {
+  background-color: #d3eceb;
+  padding: 10px;
+  font-size: 0.85rem;
+  color: #333;
+  border-top: 1px solid #ccc;
+  text-align: center;
+  border-radius: 4px;
+}
+
+/* Message Styling */
+.message-container {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.message {
+  padding: 10px;
+  border-radius: 12px;
+  max-width: 70%;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.message-container.user {
+  justify-content: flex-end;
+}
+
+.message-container.assistant {
+  justify-content: flex-start;
+}
+
+.message-container.user .message {
+  background-color: #007bff;
+  color: #fff;
+  border-radius: 10px 10px 0 10px; /* Rounded edges for the user's message */
+}
+
+.message-container.assistant .message {
+  background-color: #f1f0f0;
+  color: #333;
+  border-radius: 10px 10px 10px 0; /* Rounded edges for the assistant's message */
+}
+
+/* Input & Button Styles */
+.chat-input-container {
+  display: flex;
+  align-items: center;
+  padding-top: 10px;
+}
+
+#user-input {
+  width: 80%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  color: #333;
+  margin-right: 10px;
+  transition: border 0.3s ease-in-out;
+}
+
+#user-input:focus {
+  border-color: #007bff; /* Highlight input border on focus */
+  outline: none;
+}
+
+button {
+  width: 18%;
+  padding: 12px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+button:focus {
+  outline: none;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Responsive Design for Mobile */
+@media (max-width: 768px) {
+  body,
+  html {
     padding: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
-  }
-  
-  button {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    font-size: 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  
-  button:hover {
-    background-color: #45a049;
-  }
-  
-  button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-  }
-  
-  .response {
-    margin-top: 20px;
-    font-size: 16px;
-    color: #444;
-    white-space: pre-wrap;
-    background: #f9f9f9;
-    padding: 15px;
-    border-radius: 6px;
-    border: 1px solid #eee;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
-  }
-  
-  .loading {
-    text-align: center;
-    font-size: 14px;
-    color: #888;
-    margin-top: 10px;
   }
 
-/* Llama-3.2-3B-Instruct-q4f16_1-MLC */
+  .download-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .chat-container {
+    height: 350px;
+  }
+
+  #user-input {
+    width: 70%;
+  }
+
+  button {
+    width: 25%;
+  }
+}

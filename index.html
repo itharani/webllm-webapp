@@ -1,21 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebLLM Chatbot</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simple Chatbot</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
-  <h1>WebLLM Chatbot</h1>
-  <div class="chat-container">
-    <div id="modelLoading" class="loading">Loading model... Please wait.</div>
-    <textarea id="userInput" placeholder="Type your message here..." disabled></textarea>
-    <button id="sendBtn" disabled>Send</button>
-    <div id="response" class="response"></div>
+  <h1>Web-llm Chatbot</h1>
+
+  <!-- Download Container -->
+  <div class="download-container">
+    <select id="model-selection"></select>
+    <button id="download">
+      Download
+    </button>
   </div>
-  <script type="module" src="main.js"></script>
+  
+  <p id="download-status" class="hidden"></p>
+
+  <!-- Chat Container -->
+  <div class="chat-container">
+    <div id="chat-box" class="chat-box"></div>
+    <div id="chat-stats" class="chat-stats hidden"></div>
+    <div class="chat-input-container">
+      <input type="text" id="user-input" placeholder="Type a message..." />
+      <button id="send" disabled>Send</button>
+    </div>
+  </div>
+
+  <script src="main.js" type="module"></script>
 </body>
+
 </html>
-
-
