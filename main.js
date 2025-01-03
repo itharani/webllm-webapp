@@ -108,6 +108,6 @@ async function setupEngine() {
 };
 
 // Initialize the model when the page loads
-initializeModel().catch((err) => {
+setupEngine().catch((err) => {
   console.error("Model initialization failed:", err);
 });
