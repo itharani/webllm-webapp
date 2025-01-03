@@ -1,6 +1,6 @@
 "use client";
 
-import { CreateServiceWorkerMLCEngine, CreateWebWorkerMLCEngine } from "@mlc-ai/web-llm";
+import { CreateServiceWorkerMLCEngine, CreateWebWorkerMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
 
 // Select the model you want to use
 const selectedModel = "Llama-3.2-3B-Instruct-q4f16_1-MLC";

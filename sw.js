@@ -1,4 +1,4 @@
-import { ServiceWorkerMLCEngineHandler } from "@mlc-ai/web-llm";
+import { ServiceWorkerMLCEngineHandler } from "https://esm.run/@mlc-ai/web-llm";
 
 let handler;
 
