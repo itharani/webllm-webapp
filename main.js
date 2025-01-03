@@ -1,6 +1,6 @@
 "use client";
 
-import { CreateServiceWorkerMLCEngine, CreateWebWorkerMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
+import * as webllm from "https://esm.run/@mlc-ai/web-llm";
 
 // Elements for UI interaction
 const modelLoadingDiv = document.getElementById("modelLoading");
