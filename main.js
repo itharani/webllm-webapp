@@ -2,111 +2,108 @@
 
 import { CreateServiceWorkerMLCEngine, CreateWebWorkerMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
 
-// Select the model you want to use
-const selectedModel = "Llama-3.2-3B-Instruct-q4f16_1-MLC";
+// Elements for UI interaction
+const modelLoadingDiv = document.getElementById("modelLoading");
+const sendBtn = document.getElementById("sendBtn");
+const userInput = document.getElementById("userInput");
+const responseDiv = document.getElementById("response");
+const statusDiv = document.getElementById("status"); // New element for logging status
 
-// Callback function to show model loading progress
-const initProgressCallback = (initProgress) => {
-  console.log(initProgress);
-  // Optionally update a progress bar or display status to the user
-  document.getElementById("modelLoading").textContent = `Loading: ${initProgress}`;
+// Utility function to log messages to the status section
+const logStatus = (message, isError = false) => {
+  const logMessage = document.createElement("div");
+  logMessage.textContent = message;
+  logMessage.style.color = isError ? "red" : "black"; // Red text for errors
+  statusDiv.appendChild(logMessage);
+  statusDiv.scrollTop = statusDiv.scrollHeight; // Auto-scroll to the latest log
 };
 
-// Function to handle Web Worker setup
-async function setupWebWorker() {
-  // Create the Web Worker
-  const worker = new Worker(new URL("./worker.js", import.meta.url), { type: "module" });
-
-  // Create the engine using the Web Worker
-  const engine = await CreateWebWorkerMLCEngine(worker, selectedModel, { initProgressCallback });
-  
-  return engine;
-}
-
-// Function to handle Service Worker setup
-async function setupServiceWorker() {
-  if ('serviceWorker' in navigator) {
-    // Register the Service Worker script
-    await navigator.serviceWorker.register(new URL('./sw.js', import.meta.url), { type: 'module' });
-
-    // Create the engine using the Service Worker
-    const engine = await CreateServiceWorkerMLCEngine(selectedModel, { initProgressCallback });
-    
-    return engine;
+// Progress callback to update the loading status
+const initProgressCallback = (progress) => {
+  if (typeof progress === "number" && !isNaN(progress)) {
+    const message = `Loading model... ${Math.round(progress * 100)}% completed.`;
+    modelLoadingDiv.textContent = message;
+    logStatus(message);
   } else {
-    console.error('Service Workers are not supported in this browser.');
-    return null;
+    const message = "Loading model... Please wait.";
+    modelLoadingDiv.textContent = message;
+    logStatus(message);
   }
-}
+};
 
-// Function to initialize the model with the correct engine
-async function initializeModel() {
-  let engine;
+const selectedModel = "Llama-3.2-3B-Instruct-q4f16_1-MLC";
 
-  // Attempt to use Service Worker first (for offline capabilities)
-  engine = await setupServiceWorker();
+// Check for WebGPU support (modern browsers)
+const isWebGPUAvailable = () => {
+  return "gpu" in navigator; // WebGPU check
+};
 
-  if (!engine) {
-    // Fall back to Web Worker if Service Worker setup fails
-    engine = await setupWebWorker();
-  }
+// Check for WebGL support (fallback for older browsers or environments)
+const isWebGLAvailable = () => {
+  return typeof WebGLRenderingContext !== "undefined"; // WebGL check
+};
 
-  if (!engine) {
-    console.error("Model initialization failed.");
-    return;
-  }
-
-  console.log("Model initialized successfully.");
-  
-  return engine;
-}
-
-// Event listener for user input
-document.getElementById("sendBtn").addEventListener("click", async () => {
-  const userInput = document.getElementById("userInput").value.trim();
-  if (!userInput) return;
-
-  const engine = await initializeModel();
-  if (!engine) return;
-
-  const messages = [
-    { role: "system", content: "You are a helpful assistant." },
-    { role: "user", content: userInput },
-  ];
-
-  const chatOptions = {
-    messages,
-    temperature: 0.7,
-    stream: true, // Enable streaming for incremental response generation
-    stream_options: { include_usage: true },
-    onUpdate: (message, chunk) => {
-      document.getElementById("response").textContent += chunk; // Update the UI with each chunk of response
-    },
-    onError: (errorMessage) => {
-      console.error("Error:", errorMessage);
-      document.getElementById("response").textContent = `Error: ${errorMessage}`;
-    },
-    onFinish: (reply, stopReason, usage) => {
-      console.log("Reply:", reply);
-      console.log("Stop Reason:", stopReason);
-      console.log("Usage:", usage);
-      document.getElementById("response").textContent = reply;
-    },
-  };
-
+// Function to initialize the engine with fallbacks
+async function setupEngine() {
   try {
-    const chunks = await engine.chat.completions.create(chatOptions);
-    let fullReply = "";
-    for await (const chunk of chunks) {
-      fullReply += chunk.choices[0]?.delta.content || "";
-      console.log(fullReply);
-      if (chunk.usage) {
-        console.log(chunk.usage);
+    let engine;
+
+    if (isWebGPUAvailable()) {
+      try {
+        console.log("Trying to initialize with WebGPU.");
+        engine = await webllm.CreateMLCEngine(selectedModel, { initProgressCallback });
+      } catch (webgpuError) {
+        logStatus(`WebGPU initialization failed: ${webgpuError.message}`, true);
+        console.log("Falling back to WebGL.");
+        if (isWebGLAvailable()) {
+          engine = await webllm.CreateMLCEngine(selectedModel, { runtime: "webgl", initProgressCallback });
+        } else {
+          logStatus("WebGL not supported. Falling back to CPU.", true);
+          engine = await webllm.CreateMLCEngine(selectedModel, { runtime: "cpu", initProgressCallback });
+        }
       }
+    } else if (isWebGLAvailable()) {
+      logStatus("WebGPU not supported. Initializing model with WebGL.");
+      engine = await webllm.CreateMLCEngine(selectedModel, { runtime: "webgl", initProgressCallback });
+    } else {
+      logStatus("WebGPU and WebGL not supported. Falling back to CPU.");
+      engine = await webllm.CreateMLCEngine(selectedModel, { runtime: "cpu", initProgressCallback });
     }
-  } catch (err) {
-    console.error("Chat Error:", err);
-    document.getElementById("response").textContent = "Failed to generate response.";
+
+    // Enable UI elements once the engine is ready
+    modelLoadingDiv.style.display = "none";
+    userInput.disabled = false;
+    sendBtn.disabled = false;
+    logStatus("Model successfully loaded. You can now interact with the chatbot.");
+
+    // Set up event listener
+    sendBtn.addEventListener("click", async () => {
+      const userMessage = userInput.value.trim();
+      if (!userMessage) {
+        logStatus("Error: Empty input message.", true);
+        return;
+      }
+
+      responseDiv.innerHTML = `<div class="loading">Generating response...</div>`;
+      logStatus(`User input: "${userMessage}"`);
+
+      const messages = [
+        { role: "system", content: "You are a helpful assistant." },
+        { role: "user", content: userMessage },
+      ];
+
+      try {
+        const reply = await engine.chat.completions.create({ messages });
+        responseDiv.textContent = reply.choices[0].message.content;
+        logStatus(`Response received: "${reply.choices[0].message.content}"`);
+      } catch (err) {
+        responseDiv.textContent = `Error: Unable to generate response. ${err.message}`;
+        logStatus(`Error during response generation: ${err.message}`, true);
+      }
+    });
+  } catch (error) {
+    logStatus(`Error initializing the engine: ${error.message}`, true);
+    console.error(error);
   }
 });
 
