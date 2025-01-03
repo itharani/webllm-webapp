@@ -105,7 +105,7 @@ async function setupEngine() {
     logStatus(`Error initializing the engine: ${error.message}`, true);
     console.error(error);
   }
-});
+};
 
 // Initialize the model when the page loads
 initializeModel().catch((err) => {
