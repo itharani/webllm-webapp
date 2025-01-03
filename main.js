@@ -1,55 +1,3 @@
-// import * as webllm from "https://esm.run/@mlc-ai/web-llm";
-
-// const modelLoadingDiv = document.getElementById("modelLoading");
-// const sendBtn = document.getElementById("sendBtn");
-// const userInput = document.getElementById("userInput");
-// const responseDiv = document.getElementById("response");
-
-// const initProgressCallback = (progress) => {
-//   if (typeof progress === "number" && !isNaN(progress)) {
-//     modelLoadingDiv.textContent = `Loading model... ${Math.round(progress * 100)}% completed.`;
-//   } else {
-//     modelLoadingDiv.textContent = "Loading model... Please wait.";
-//   }
-// };
-
-// const selectedModel = "Llama-3.2-3B-Instruct-q4f16_1-MLC";
-
-// async function setupEngine() {
-//   try {
-//     const engine = await webllm.CreateMLCEngine(selectedModel, { initProgressCallback });
-//     modelLoadingDiv.style.display = "none";
-//     userInput.disabled = false;
-//     sendBtn.disabled = false;
-
-//     sendBtn.addEventListener("click", async () => {
-//       const userMessage = userInput.value.trim();
-//       if (!userMessage) return;
-
-//       // Show loading indicator
-//       responseDiv.innerHTML = `<div class="loading">Generating response...</div>`;
-
-//       const messages = [
-//         { role: "system", content: "You are a helpful assistant." },
-//         { role: "user", content: userMessage },
-//       ];
-
-//       try {
-//         const reply = await engine.chat.completions.create({ messages });
-//         responseDiv.textContent = reply.choices[0].message.content;
-//       } catch (err) {
-//         responseDiv.textContent = "Error: Unable to generate response.";
-//         console.error(err);
-//       }
-//     });
-//   } catch (error) {
-//     modelLoadingDiv.textContent = "Error: Failed to load model.";
-//     console.error(error);
-//   }
-// }
-
-// setupEngine();
-
 import * as webllm from "https://esm.run/@mlc-ai/web-llm";
 
 // Elements for UI interaction
@@ -57,13 +5,27 @@ const modelLoadingDiv = document.getElementById("modelLoading");
 const sendBtn = document.getElementById("sendBtn");
 const userInput = document.getElementById("userInput");
 const responseDiv = document.getElementById("response");
+const statusDiv = document.getElementById("status"); // New element for logging status
+
+// Utility function to log messages to the status section
+const logStatus = (message, isError = false) => {
+  const logMessage = document.createElement("div");
+  logMessage.textContent = message;
+  logMessage.style.color = isError ? "red" : "black"; // Red text for errors
+  statusDiv.appendChild(logMessage);
+  statusDiv.scrollTop = statusDiv.scrollHeight; // Auto-scroll to the latest log
+};
 
 // Progress callback to update the loading status
 const initProgressCallback = (progress) => {
   if (typeof progress === "number" && !isNaN(progress)) {
-    modelLoadingDiv.textContent = `Loading model... ${Math.round(progress * 100)}% completed.`;
+    const message = `Loading model... ${Math.round(progress * 100)}% completed.`;
+    modelLoadingDiv.textContent = message;
+    logStatus(message);
   } else {
-    modelLoadingDiv.textContent = "Loading model... Please wait.";
+    const message = "Loading model... Please wait.";
+    modelLoadingDiv.textContent = message;
+    logStatus(message);
   }
 };
 
@@ -86,15 +48,13 @@ async function setupEngine() {
 
     // Check WebGPU support and fallback to WebGL or CPU if not available
     if (isWebGPUAvailable()) {
-      console.log("WebGPU supported. Initializing model with WebGPU.");
+      logStatus("WebGPU supported. Initializing model with WebGPU.");
       engine = await webllm.CreateMLCEngine(selectedModel, { initProgressCallback });
     } else if (isWebGLAvailable()) {
-      console.log("WebGL supported. Initializing model with WebGL.");
-      // You can modify this part to explicitly use WebGL if WebGPU is unavailable
+      logStatus("WebGL supported. Initializing model with WebGL.");
       engine = await webllm.CreateMLCEngine(selectedModel, { initProgressCallback });
     } else {
-      console.log("WebGPU and WebGL not supported. Falling back to CPU.");
-      // CPU fallback (You can implement an alternative engine setup here)
+      logStatus("WebGPU and WebGL not supported. Falling back to CPU.");
       engine = await webllm.CreateMLCEngine(selectedModel, { initProgressCallback });
     }
 
@@ -102,14 +62,19 @@ async function setupEngine() {
     modelLoadingDiv.style.display = "none";
     userInput.disabled = false;
     sendBtn.disabled = false;
+    logStatus("Model successfully loaded. You can now interact with the chatbot.");
 
     // Event listener for generating a response
     sendBtn.addEventListener("click", async () => {
       const userMessage = userInput.value.trim();
-      if (!userMessage) return;
+      if (!userMessage) {
+        logStatus("Error: Empty input message.", true);
+        return;
+      }
 
       // Show loading indicator
       responseDiv.innerHTML = `<div class="loading">Generating response...</div>`;
+      logStatus(`User input: "${userMessage}"`);
 
       const messages = [
         { role: "system", content: "You are a helpful assistant." },
@@ -118,18 +83,23 @@ async function setupEngine() {
 
       try {
         const reply = await engine.chat.completions.create({ messages });
-        responseDiv.textContent = reply.choices[0].message.content;
+        const responseText = reply.choices[0].message.content;
+        responseDiv.textContent = responseText;
+        logStatus(`Response received: "${responseText}"`);
       } catch (err) {
-        responseDiv.textContent = "Error: Unable to generate response.";
+        const errorMessage = `Error: Unable to generate response. ${err.message || err}`;
+        responseDiv.textContent = errorMessage;
+        logStatus(errorMessage, true);
         console.error(err);
       }
     });
   } catch (error) {
-    modelLoadingDiv.textContent = "Error: Failed to load model.";
+    const errorMessage = `Error: Failed to load model. ${error.message || error}`;
+    modelLoadingDiv.textContent = errorMessage;
+    logStatus(errorMessage, true);
     console.error(error);
   }
 }
 
 // Start setting up the engine
 setupEngine();
-
