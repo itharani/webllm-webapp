@@ -46,25 +46,35 @@ async function setupEngine() {
   try {
     let engine;
 
-    // Check WebGPU support and fallback to WebGL or CPU if not available
     if (isWebGPUAvailable()) {
-      logStatus("WebGPU supported. Initializing model with WebGPU.");
-      engine = await webllm.CreateMLCEngine(selectedModel, { initProgressCallback });
+      try {
+        console.log("Trying to initialize with WebGPU.");
+        engine = await webllm.CreateMLCEngine(selectedModel, { initProgressCallback });
+      } catch (webgpuError) {
+        logStatus(`WebGPU initialization failed: ${webgpuError.message}`, true);
+        console.log("Falling back to WebGL.");
+        if (isWebGLAvailable()) {
+          engine = await webllm.CreateMLCEngine(selectedModel, { runtime: "webgl", initProgressCallback });
+        } else {
+          logStatus("WebGL not supported. Falling back to CPU.", true);
+          engine = await webllm.CreateMLCEngine(selectedModel, { runtime: "cpu", initProgressCallback });
+        }
+      }
     } else if (isWebGLAvailable()) {
-      logStatus("WebGL supported. Initializing model with WebGL.");
-      engine = await webllm.CreateMLCEngine(selectedModel, { initProgressCallback });
+      logStatus("WebGPU not supported. Initializing model with WebGL.");
+      engine = await webllm.CreateMLCEngine(selectedModel, { runtime: "webgl", initProgressCallback });
     } else {
       logStatus("WebGPU and WebGL not supported. Falling back to CPU.");
-      engine = await webllm.CreateMLCEngine(selectedModel, { initProgressCallback });
+      engine = await webllm.CreateMLCEngine(selectedModel, { runtime: "cpu", initProgressCallback });
     }
 
-    // Once engine is ready, enable the UI elements
+    // Enable UI elements once the engine is ready
     modelLoadingDiv.style.display = "none";
     userInput.disabled = false;
     sendBtn.disabled = false;
     logStatus("Model successfully loaded. You can now interact with the chatbot.");
 
-    // Event listener for generating a response
+    // Set up event listener
     sendBtn.addEventListener("click", async () => {
       const userMessage = userInput.value.trim();
       if (!userMessage) {
@@ -72,7 +82,6 @@ async function setupEngine() {
         return;
       }
 
-      // Show loading indicator
       responseDiv.innerHTML = `<div class="loading">Generating response...</div>`;
       logStatus(`User input: "${userMessage}"`);
 
@@ -83,20 +92,15 @@ async function setupEngine() {
 
       try {
         const reply = await engine.chat.completions.create({ messages });
-        const responseText = reply.choices[0].message.content;
-        responseDiv.textContent = responseText;
-        logStatus(`Response received: "${responseText}"`);
+        responseDiv.textContent = reply.choices[0].message.content;
+        logStatus(`Response received: "${reply.choices[0].message.content}"`);
       } catch (err) {
-        const errorMessage = `Error: Unable to generate response. ${err.message || err}`;
-        responseDiv.textContent = errorMessage;
-        logStatus(errorMessage, true);
-        console.error(err);
+        responseDiv.textContent = `Error: Unable to generate response. ${err.message}`;
+        logStatus(`Error during response generation: ${err.message}`, true);
       }
     });
   } catch (error) {
-    const errorMessage = `Error: Failed to load model. ${error.message || error}`;
-    modelLoadingDiv.textContent = errorMessage;
-    logStatus(errorMessage, true);
+    logStatus(`Error initializing the engine: ${error.message}`, true);
     console.error(error);
   }
 }
