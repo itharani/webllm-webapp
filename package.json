@@ -4,15 +4,14 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-  "start": "vite",
-  "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "vite",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@mlc-ai/web-llm": "^0.2.77",
-    "express": "^4.21.2"
+    "@mlc-ai/web-llm": "^0.2.77"
   },
   "description": "",
   "devDependencies": {
